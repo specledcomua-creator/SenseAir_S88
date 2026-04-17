@@ -4,7 +4,6 @@
 #include <SoftwareSerial.h>
 #include "SenseAir_S88.h"
 
-// Ручные прототипы, чтобы обойти баг компилятора Arduino
 void onCO2DataReady(uint16_t co2);
 void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd);
 
@@ -49,7 +48,6 @@ void loop() {
 }
 
 #else
-// Пустой скетч для плат (типа ESP32), где нет SoftwareSerial
 void setup() {}
 void loop() {}
 #endif
