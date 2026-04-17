@@ -1,13 +1,25 @@
 #include "SenseAir_S88.h"
 
 SenseAir_S88::SenseAir_S88() : _serial(nullptr), _currentState(State::IDLE), 
+                               _requestTime(0), // инициализация таймера
+                               _onCmdSuccess(nullptr),
                                _onDataReady(nullptr), _onError(nullptr),
                                _queueHead(0), _queueTail(0),
                                _rxIndex(0), _expectedLength(0), 
                                _targetABCHours(0), _consecutiveErrors(0) {
     _latestData.co2Ppm = 0;
     _latestData.status = ErrorCode::ERR_NULL_POINTER;
-    _onCmdSuccess = nullptr;
+
+    // инициализация кольцевого буфера
+    for (uint8_t i = 0; i < QUEUE_SIZE; i++) {
+        _commandQueue[i].type = CommandType::READ_CO2;
+        _commandQueue[i].param = 0;
+    }
+
+    // инициализация буфера приема
+    for (uint8_t i = 0; i < RX_BUFFER_SIZE; i++) {
+        _rxBuffer[i] = 0;
+    }
 }
 
 // Обязательная проверка входного потока
