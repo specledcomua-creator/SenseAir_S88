@@ -1,8 +1,12 @@
-#if defined(__AVR__) // Защита: компилировать только для плат AVR (Uno, Mega, Nano)
+#if defined(__AVR__) || defined(ARDUINO_ARCH_AVR)
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include "SenseAir_S88.h"
+
+// Ручные прототипы, чтобы обойти баг компилятора Arduino
+void onCO2DataReady(uint16_t co2);
+void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd);
 
 SoftwareSerial s8Serial(10, 11); 
 SenseAir_S88 co2Sensor;
@@ -17,7 +21,7 @@ void onCO2DataReady(uint16_t co2) {
 
 void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd) {
     Serial.print("[ERROR] Command dropped. Type: ");
-    Serial.print(failedCmd == SenseAir_S88::CommandType::READ_CO2 ? "READ_CO2" : "SET_ABC");
+    Serial.print(failedCmd == SenseAir_S88::CommandType::S8_CMD_READ_CO2 ? "READ_CO2" : "SET_ABC");
     Serial.print(" | Error Code: ");
     Serial.println(static_cast<int>(error));
 }
@@ -45,8 +49,7 @@ void loop() {
 }
 
 #else
-// Если пользователь выбрал другую плату (ESP32/ESP8266), компилируем пустой скетч
-#pragma message("This example is specifically designed for AVR boards (Uno, Mega) using SoftwareSerial.")
+// Пустой скетч для плат (типа ESP32), где нет SoftwareSerial
 void setup() {}
 void loop() {}
 #endif

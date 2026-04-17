@@ -1,9 +1,15 @@
-#if defined(ESP32) // Защита: компилировать только для ESP32 (требуется LittleFS)
+#if defined(ESP32)
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <LittleFS.h>
 #include "SenseAir_S88.h"
+
+void saveBackup(uint16_t hours);
+void checkAndRestoreBackup();
+void onCO2DataReady(uint16_t co2);
+void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd);
+void onCommandSuccess(SenseAir_S88::CommandType cmd);
 
 #define S8_RX_PIN 16
 #define S8_TX_PIN 17
@@ -39,13 +45,13 @@ void onCO2DataReady(uint16_t co2) {
 }
 
 void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd) {
-    if (failedCmd == SenseAir_S88::CommandType::SET_ABC && error == SenseAir_S88::ErrorCode::ERR_COMMAND_DROPPED) {
+    if (failedCmd == SenseAir_S88::CommandType::S8_CMD_SET_ABC && error == SenseAir_S88::ErrorCode::S8_ERR_COMMAND_DROPPED) {
         saveBackup(180); 
     }
 }
 
 void onCommandSuccess(SenseAir_S88::CommandType cmd) {
-    if (cmd == SenseAir_S88::CommandType::SET_ABC) {
+    if (cmd == SenseAir_S88::CommandType::S8_CMD_SET_ABC) {
         if (LittleFS.exists(BACKUP_FILE)) LittleFS.remove(BACKUP_FILE);
     }
 }
@@ -74,7 +80,6 @@ void loop() {
 }
 
 #else
-#pragma message("This example is designed for ESP32 (requires LittleFS).")
 void setup() {}
 void loop() {}
 #endif

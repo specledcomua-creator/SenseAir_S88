@@ -1,7 +1,10 @@
-#if defined(ESP32) // Защита: компилировать только для ESP32
+#if defined(ESP32)
 
 #include <Arduino.h>
 #include "SenseAir_S88.h"
+
+void onCO2DataReady(uint16_t co2);
+void onErrorOccurred(SenseAir_S88::ErrorCode error, SenseAir_S88::CommandType failedCmd);
 
 #define S8_RX_PIN 16
 #define S8_TX_PIN 17
@@ -42,7 +45,6 @@ void loop() {
 }
 
 #else
-#pragma message("This example is designed for ESP32 utilizing HardwareSerial.")
 void setup() {}
 void loop() {}
 #endif
