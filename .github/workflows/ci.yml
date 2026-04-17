@@ -48,6 +48,7 @@ jobs:
         with:
           fqbn: ${{ matrix.board }}
           platforms: |
+            - name: arduino:avr:uno
             - name: esp8266:esp8266
               source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
             - name: esp32:esp32
@@ -58,3 +59,5 @@ jobs:
             - ./examples/AsyncMonitor
             - ./examples/HardwareSerial_ESP32
             - ./examples/Advanced_Configuration
+
+            
