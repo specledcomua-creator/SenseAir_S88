@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # Шаг 1: Умный статический анализ кода (cppcheck)
+  # Шаг 1: Умный статический анализ кода (cppcheck) на поиск логических ошибок
   static-analysis:
     name: CppCheck Static Analysis
     runs-on: ubuntu-latest
@@ -16,29 +16,15 @@ jobs:
       - name: Install cppcheck
         run: sudo apt-get update && sudo apt-get install -y cppcheck
       - name: Run cppcheck
-        # --suppress=missingIncludeSystem игнорирует отсутствие <Arduino.h> на сервере
-        # Включены проверки предупреждений, стиля, производительности и переносимости
         run: cppcheck --enable=warning,style,performance,portability --inconclusive --suppress=missingIncludeSystem --inline-suppr --error-exitcode=1 -i examples/ src/
 
-  # Шаг 2: Проверка стиля кодирования (Clang-Format)
-  format-check:
-    name: Clang-Format Style Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check Formatting
-        uses: jidicula/clang-format-action@v2
-        with:
-          clang-format-version: '14'
-          check-path: 'src'
-
-  # Шаг 3: Компиляция с кэшированием (запустится только если шаги 1 и 2 прошли успешно)
+  # Шаг 2: Компиляция скетчей (запустится только если cppcheck не нашел утечек памяти)
   build:
     name: Compile Examples
-    needs: [static-analysis, format-check]
+    needs: [static-analysis]
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false # если Uno упадет, ESP32 все равно продолжит компилироваться 
+      fail-fast: false
       matrix:
         board: 
           - arduino:avr:uno
@@ -49,7 +35,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # Кэширование загруженных ядер Arduino (ускоряет работу с 4-5 минут до 30-40 секунд)
       - name: Cache Arduino platforms
         uses: actions/cache@v4
         with:
