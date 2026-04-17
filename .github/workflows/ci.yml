@@ -39,9 +39,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.arduino15/packages
-          key: ${{ runner.os }}-arduino-${{ matrix.board }}
+          key: ${{ runner.os }}-arduino-v2-${{ matrix.board }}
           restore-keys: |
-            ${{ runner.os }}-arduino-
+            ${{ runner.os }}-arduino-v2-
 
       - name: Compile examples
         uses: arduino/compile-sketches@v1

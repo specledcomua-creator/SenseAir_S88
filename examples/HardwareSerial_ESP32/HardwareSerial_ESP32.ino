@@ -45,6 +45,10 @@ void loop() {
 }
 
 #else
+#include <Arduino.h>
+#include "SenseAir_S88.h"
+
+// Обязательные заглушки, чтобы компилятор не падал на несовместимых платах
 void setup() {}
 void loop() {}
 #endif
