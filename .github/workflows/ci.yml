@@ -48,7 +48,7 @@ jobs:
         with:
           fqbn: ${{ matrix.board }}
           platforms: |
-            - name: arduino:avr:uno
+            - name: arduino:avr
             - name: esp8266:esp8266
               source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
             - name: esp32:esp32
