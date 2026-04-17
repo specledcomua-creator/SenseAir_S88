@@ -1,0 +1,31 @@
+{
+  "name": "SenseAir_S88_Async",
+  "version": "1.0.0",
+  "description": "Enterprise-grade, non-blocking library for SenseAir S8 CO2 sensors with ring buffer and callbacks.",
+  "keywords": [
+    "co2",
+    "sensor",
+    "senseair",
+    "s8",
+    "async",
+    "modbus",
+    "non-blocking"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/specledcomua-creator/SenseAir_S88.git"
+  },
+  "authors": [
+    {
+      "name": "Oleksandr Specled",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "*"
+  ]
+}

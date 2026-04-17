@@ -1,0 +1,21 @@
+# PlatformIO
+.pio/
+.vscode/
+*.json~
+
+# Arduino IDE / Сборка
+build/
+*.elf
+*.hex
+*.bin
+*.o
+*.a
+
+# Системный мусор ОС (macOS / Windows)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

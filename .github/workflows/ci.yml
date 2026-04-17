@@ -1,0 +1,75 @@
+name: CI / CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Шаг 1: Умный статический анализ кода (cppcheck)
+  static-analysis:
+    name: CppCheck Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Run cppcheck
+        # --suppress=missingIncludeSystem игнорирует отсутствие <Arduino.h> на сервере
+        # Включены проверки предупреждений, стиля, производительности и переносимости
+        run: cppcheck --enable=warning,style,performance,portability --inconclusive --suppress=missingIncludeSystem --inline-suppr --error-exitcode=1 -i examples/ src/
+
+  # Шаг 2: Проверка стиля кодирования (Clang-Format)
+  format-check:
+    name: Clang-Format Style Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Formatting
+        uses: jidicula/clang-format-action@v2.11.0
+        with:
+          clang-format-version: '14'
+          check-path: 'src'
+
+  # Шаг 3: Компиляция с кэшированием (запустится только если шаги 1 и 2 прошли успешно)
+  build:
+    name: Compile Examples
+    needs: [static-analysis, format-check]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # если Uno упадет, ESP32 все равно продолжит компилироваться 
+      matrix:
+        board: 
+          - arduino:avr:uno
+          - arduino:avr:mega
+          - esp8266:esp8266:nodemcuv2
+          - esp32:esp32:esp32
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Кэширование загруженных ядер Arduino (ускоряет работу с 4-5 минут до 30-40 секунд)
+      - name: Cache Arduino platforms
+        uses: actions/cache@v4
+        with:
+          path: ~/.arduino15/packages
+          key: ${{ runner.os }}-arduino-${{ matrix.board }}
+          restore-keys: |
+            ${{ runner.os }}-arduino-
+
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.board }}
+          platforms: |
+            - name: esp8266:esp8266
+              source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+            - name: esp32:esp32
+              source-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          libraries: |
+            - source-path: ./
+          sketch-paths: |
+            - ./examples/AsyncMonitor
+            - ./examples/HardwareSerial_ESP32
+            - ./examples/Advanced_Configuration
