@@ -1,6 +1,6 @@
 # SenseAir S88 Async Library
 
-![PlatformIO](https://img.shields.io/badge/PlatformIO-compatible-orange)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/specleds/library/SenseAir_S88_Async.svg)](https://registry.platformio.org/libraries/specleds/SenseAir_S88_Async)
 ![Arduino](https://img.shields.io/badge/Arduino-compatible-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
