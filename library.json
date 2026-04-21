@@ -1,6 +1,6 @@
 {
   "name": "SenseAir_S88_Async",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Enterprise-grade, non-blocking library for SenseAir S8 CO2 sensors with ring buffer and callbacks.",
   "keywords": [
     "co2",

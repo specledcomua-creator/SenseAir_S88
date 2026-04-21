@@ -6,10 +6,10 @@
 
 class SenseAir_S88 {
 public:
-    // Префиксы S8_CMD_ защищают от конфликтов с системными макросами
+    // Prefixes S8_CMD_ prevent conflicts with system macros
     enum class CommandType { 
         S8_CMD_READ_CO2, 
-        S8_CMD_SET_ABC 
+        S8_CMD_SET_ABC
     };
 
     enum class ErrorCode {
@@ -51,7 +51,7 @@ public:
     void flushQueue(bool keepConfigCommands = true); 
 
 private:
-    // Префиксы S8_STATE_ защищают от AVR макросов (например, IDLE)
+    // Prefixes S8_STATE_ protect against AVR macros (e.g., IDLE)
     enum class State {
         S8_STATE_IDLE,
         S8_STATE_WAITING_CO2_RESPONSE,
@@ -106,4 +106,4 @@ private:
     void sendModbusCommand(const uint8_t* cmd, uint8_t len);
 };
 
-#endif // SENSEAIR_S88_H 
+#endif // SENSEAIR_S88_H

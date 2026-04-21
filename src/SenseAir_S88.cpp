@@ -10,16 +10,19 @@ SenseAir_S88::SenseAir_S88() : _serial(nullptr), _currentState(State::S8_STATE_I
     _latestData.co2Ppm = 0;
     _latestData.status = ErrorCode::S8_ERR_NULL_POINTER;
 
+    // Initialize command queue
     for (uint8_t i = 0; i < QUEUE_SIZE; i++) {
         _commandQueue[i].type = CommandType::S8_CMD_READ_CO2;
         _commandQueue[i].param = 0;
     }
+    // Initialize RX buffer
     for (uint8_t i = 0; i < RX_BUFFER_SIZE; i++) {
         _rxBuffer[i] = 0;
     }
 }
 
 bool SenseAir_S88::begin(Stream* stream) {
+    // Strict pointer validation
     if (stream == nullptr) {
         _latestData.status = ErrorCode::S8_ERR_NULL_POINTER;
         return false;
@@ -44,7 +47,7 @@ void SenseAir_S88::setErrorCallback(ErrorCallback callback) {
 
 bool SenseAir_S88::enqueueCommand(CommandType cmdType, uint16_t param) {
     uint8_t nextHead = (_queueHead + 1) % QUEUE_SIZE;
-    if (nextHead == _queueTail) return false;
+    if (nextHead == _queueTail) return false; // Queue is full
     
     _commandQueue[_queueHead].type = cmdType;
     _commandQueue[_queueHead].param = param;
@@ -65,12 +68,14 @@ bool SenseAir_S88::isQueueEmpty() const {
 
 void SenseAir_S88::flushQueue(bool keepConfigCommands) {
     if (!keepConfigCommands) {
+        // Drop all pending commands
         while (!isQueueEmpty()) {
             QueueItem item;
             dequeueCommand(item);
             if (_onError != nullptr) _onError(ErrorCode::S8_ERR_COMMAND_DROPPED, item.type);
         }
     } else {
+        // Retain only configuration commands (like SET_ABC)
         uint8_t count = (_queueHead >= _queueTail) ? (_queueHead - _queueTail) : (QUEUE_SIZE - _queueTail + _queueHead);
         uint8_t tempTail = _queueTail;
         
@@ -104,7 +109,10 @@ SenseAir_S88::ErrorCode SenseAir_S88::requestCO2() {
 
 SenseAir_S88::ErrorCode SenseAir_S88::setABCPeriod(uint16_t hours) {
     if (_serial == nullptr) return ErrorCode::S8_ERR_NULL_POINTER;
-    if (hours < 1 || hours > 180) return ErrorCode::S8_ERR_PARAM_OUT_OF_BOUNDS;
+    
+    // Validate input: Max period is 180 hours. 0 is valid (Disables ABC).
+    if (hours > 180) return ErrorCode::S8_ERR_PARAM_OUT_OF_BOUNDS;
+    
     if (!enqueueCommand(CommandType::S8_CMD_SET_ABC, hours)) return ErrorCode::S8_ERR_QUEUE_FULL;
     return ErrorCode::S8_ERR_OK;
 }
@@ -131,6 +139,7 @@ void SenseAir_S88::resetState(ErrorCode err) {
         _latestData.status = err;
         _consecutiveErrors++;
         
+        // Trigger self-healing flush if too many consecutive errors occur
         if (_consecutiveErrors >= MAX_RETRIES) {
             flushQueue(true); 
         }
@@ -164,6 +173,7 @@ bool SenseAir_S88::validateModbusCRC(uint8_t length) {
 bool SenseAir_S88::update() {
     if (_serial == nullptr) return false;
 
+    // Check for pending commands in IDLE state
     if (_currentState == State::S8_STATE_IDLE && !isQueueEmpty()) {
         QueueItem nextCmd;
         if (dequeueCommand(nextCmd)) {
@@ -174,6 +184,7 @@ bool SenseAir_S88::update() {
             } 
             else if (nextCmd.type == CommandType::S8_CMD_SET_ABC) {
                 _targetABCHours = nextCmd.param;
+                // Command to READ current ABC period from Holding Register 0x001F
                 const uint8_t command[TX_BUFFER_SIZE] = {0xFE, 0x03, 0x00, 0x1F, 0x00, 0x01, 0xA1, 0xC3};
                 sendModbusCommand(command, TX_BUFFER_SIZE);
                 _currentState = State::S8_STATE_WAITING_ABC_READ_RESPONSE;
@@ -181,6 +192,7 @@ bool SenseAir_S88::update() {
         }
     }
 
+    // Process asynchronous timeouts and incoming data
     if (_currentState == State::S8_STATE_WAITING_CO2_RESPONSE || 
         _currentState == State::S8_STATE_WAITING_ABC_READ_RESPONSE || 
         _currentState == State::S8_STATE_WAITING_ABC_WRITE_RESPONSE) {
@@ -193,9 +205,10 @@ bool SenseAir_S88::update() {
         while (_serial->available() > 0 && _rxIndex < RX_BUFFER_SIZE) {
             _rxBuffer[_rxIndex++] = _serial->read();
 
+            // Determine expected payload length dynamically based on Modbus response type
             if (_expectedLength == 0 && _rxIndex >= 3) {
-                if (_rxBuffer[1] & 0x80) _expectedLength = 5;
-                else _expectedLength = 3 + _rxBuffer[2] + 2;
+                if (_rxBuffer[1] & 0x80) _expectedLength = 5; // Modbus Exception Frame
+                else _expectedLength = 3 + _rxBuffer[2] + 2;  // Standard Data Frame
 
                 if (_expectedLength > RX_BUFFER_SIZE) {
                     resetState(ErrorCode::S8_ERR_BUFFER_OVERFLOW);
@@ -211,10 +224,12 @@ bool SenseAir_S88::update() {
         }
     }
 
+    // Process complete Modbus frames based on current state
     switch (_currentState) {
         case State::S8_STATE_PROCESSING_CO2:
             if (validateModbusCRC(_expectedLength) && !(_rxBuffer[1] & 0x80)) {
                 uint16_t co2 = (_rxBuffer[3] << 8) | _rxBuffer[4];
+                // Validate sensor physics boundaries
                 if (co2 >= MIN_CO2 && co2 <= MAX_CO2) {
                     _latestData.co2Ppm = co2;
                     _latestData.status = ErrorCode::S8_ERR_OK;
@@ -233,6 +248,7 @@ bool SenseAir_S88::update() {
             if (validateModbusCRC(_expectedLength) && !(_rxBuffer[1] & 0x80)) {
                 uint16_t currentABC = (_rxBuffer[3] << 8) | _rxBuffer[4];
                 
+                // Only write to EEPROM if the value actually changed (Read-Modify-Write pattern)
                 if (currentABC != _targetABCHours) {
                     uint8_t writeCmd[TX_BUFFER_SIZE] = {0xFE, 0x06, 0x00, 0x1F, 
                                                         (uint8_t)(_targetABCHours >> 8), 
@@ -253,6 +269,7 @@ bool SenseAir_S88::update() {
                     sendModbusCommand(writeCmd, TX_BUFFER_SIZE);
                     _currentState = State::S8_STATE_WAITING_ABC_WRITE_RESPONSE;
                 } else {
+                    // Value is already correct, fire success callback and finish
                     if (_onCmdSuccess != nullptr) _onCmdSuccess(CommandType::S8_CMD_SET_ABC);
                     resetState(ErrorCode::S8_ERR_OK);
                 }
