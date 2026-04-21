@@ -3,6 +3,7 @@
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/specleds/library/SenseAir_S88_Async.svg)](https://registry.platformio.org/libraries/specleds/SenseAir_S88_Async)
 ![Arduino](https://img.shields.io/badge/Arduino-compatible-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![GitHub last commit](https://img.shields.io/github/last-commit/specledcomua-creator/SenseAir_S88?style=flat)
 
 
 A highly reliable, asynchronous, non-blocking C++ library for the SenseAir S8 and S88 CO2 sensors. Built for industrial IoT and smart home applications where main loop blocking is unacceptable.
