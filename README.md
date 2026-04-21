@@ -4,12 +4,13 @@
 ![Arduino](https://img.shields.io/badge/Arduino-compatible-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Arduino Downloads](https://img.shields.io/arduino-plugin/dw/SenseAir_S88_Async)
-![GitHub Downloads](https://img.shields.io/github/downloads/specleds/SenseAir_S88/total)
+![GitHub Downloads](https://img.shields.io/github/downloads/specledcomua-creator/SenseAir_S88/total)
 
 A highly reliable, asynchronous, non-blocking C++ library for the SenseAir S8 and S88 CO2 sensors. Built for industrial IoT and smart home applications where main loop blocking is unacceptable.
 
 ## 🚀 Key Features
 * **100% Non-blocking (State Machine):** Never uses `delay()`. Keeps your MCU free for WiFi, MQTT, and UI tasks.
+* **ABC Period Control (v1.2.0+):** Enable, disable (0h), or fine-tune the Automatic Baseline Correction period to safely use the sensor in enclosed spaces like greenhouses.
 * **Asynchronous Hardware Calibration (v1.1.0+):** Safely perform the 30-second background CO2 calibration (400 ppm) completely asynchronously without freezing your device.
 * **Command Queueing:** Uses a Ring Buffer to queue multiple requests (`requestCO2()`, `setABCPeriod()`).
 * **Self-Healing:** Automatically flushes dropped/corrupted requests after consecutive errors but retains critical EEPROM write commands.
